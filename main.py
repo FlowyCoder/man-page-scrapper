@@ -1,8 +1,10 @@
 import os
+import json
 from enum import Enum
 
 # Get man page into file man
 man_page_name = "git stash"
+# man_page_name = "node"
 os.system('man {} >> man'.format(man_page_name))
 
 # Get right lines from man page
@@ -62,7 +64,7 @@ def handle_com():
 def handle_opt():
     global current_section
     # Section has to be zero before
-    assert(current_section == Keyword.COM)
+    # assert(current_section == Keyword.COM)
     current_section = Keyword.OPT
     return
 
@@ -172,6 +174,7 @@ syn_strip = [syn.strip() for syn in syns if syn != '']
 
 
 def parsing_pipe(symboles):
+    # TODO: more than 1 pipe symbol
     len_symboles = len(symboles)
     index = 0
     while index < len_symboles:
@@ -194,7 +197,16 @@ def parsing_pipe(symboles):
                 len_symboles -= 2
             else:
                 # TODO: needs to be implemented
-                index += 1
+                temp_dict = {
+                    "name1": symboles[index-1],
+                    "name2": symboles[index+1]
+                }
+                # Remove the 2 symboles around |
+                del symboles[(index-1):(index+2)]
+                symboles.insert(index-1, temp_dict.copy())
+                # Removed symboles -> list gets smaller
+                # Dont add 1 to index
+                len_symboles -= 2
         else:
             index += 1
     return symboles
@@ -279,7 +291,10 @@ split_symboles = [
     '|',
 ]
 
-for line_sync in syn_strip:
+syn_symbol_trees = []
+
+# TODO: git stash not working prob
+for line_sync in syn_strip[:5]:
     symboles = [line_sync]
 
     for split_symbole in split_symboles:
@@ -318,7 +333,12 @@ for line_sync in syn_strip:
     ]
     for concat_function in concat_functions:
         symboles = concat_function(symboles)
-    print(symboles)
+
+    syn_symbol_trees.append(symboles)
+
+with open('dict.txt', 'w') as file:
+    # use `json.loads` to do the reverse
+    file.write(json.dumps(syn_symbol_trees, indent=4))
 
 # Delete temp file man
 os.system('rm man')
